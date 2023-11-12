@@ -1,0 +1,29 @@
+{
+    "name": "tarach/self-signed-ssl-generator",
+    "description": "Symfony based command that can be used to generate self signed SSL certificates",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Tarach\\SelfSignedCert\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Sebastian Tarach",
+            "email": "sebastian.tarach@gmail.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">=8.2",
+        "ext-openssl": "*",
+        "symfony/console": "^6.3",
+        "symfony/config": "^6.3",
+        "symfony/yaml": "^6.3"
+    },
+    "require-dev": {
+        "symfony/debug": "^4.4",
+        "symfony/error-handler": "^6.3"
+    }
+}

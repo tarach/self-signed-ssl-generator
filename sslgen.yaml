@@ -1,0 +1,8 @@
+defaults:
+  countryName: PL
+  commonName: 192.168.56.10
+  emailAddress: sebastian.tarach@gmail.com
+  localityName: Warsaw
+  organizationalUnitName: IT Dept.
+  organizationName: My Company Ltd.
+  stateOrProvinceName: Mazovia

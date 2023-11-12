@@ -1,0 +1,11 @@
+#!/usr/bin/env php
+<?php
+
+$phar = new Phar('sslgen.phar');
+$phar->buildFromDirectory(
+    __DIR__ . '/../',
+    '/vendor|src|bin\\/console.*/',
+);
+$phar->setDefaultStub('bin/console.php');
+$phar->compress(Phar::GZ);
+$phar->compress(Phar::BZ2);
