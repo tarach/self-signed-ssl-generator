@@ -4,13 +4,20 @@ declare(strict_types=1);
 
 namespace Tarach\SelfSignedCert;
 
+use Exception;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Tarach\SelfSignedCert\Command\Config\Config;
+use Tarach\SelfSignedCert\Command\Config\ConfigLoader;
+use Tarach\SelfSignedCert\Command\OptionsCollection;
+use Tarach\SelfSignedCert\Command\OptionsCollectionFactory;
 use Tarach\SelfSignedCert\Command\QuestionCollectionFactory;
-use Symfony\Component\Config\Definition\Processor;
-use Symfony\Component\Yaml\Yaml;
 
 /**
  * @method getName(): string
@@ -21,6 +28,7 @@ class SSLGenerateCommand extends Command
 
     private string $defaultOutputDirectory;
     private QuestionCollectionFactory $questionFactory;
+    private OptionsCollection $options;
 
     public function __construct()
     {
@@ -30,49 +38,69 @@ class SSLGenerateCommand extends Command
         $this->questionFactory = new QuestionCollectionFactory();
 
         foreach ($this->questionFactory->getMap() as $question) {
-            $this->getDefinition()->addOption(call_user_func([$question, 'getCommandOption']));
+            $inputOption = call_user_func([$question, 'getCommandOption']);
+            assert($inputOption instanceof InputOption);
+            $this->addInputOption($inputOption);
         }
 
-        $this->addOption(
-            'directory',
-            'd',
-            InputOption::VALUE_REQUIRED,
-            'Path to output directory.',
-            $this->defaultOutputDirectory
-        );
-
-        $this->addOption(
-            'config',
-            'c',
-            InputOption::VALUE_REQUIRED,
-            'Path to yaml configuration file(s). Or multiple comma separated files.',
+        $this->options = (new OptionsCollectionFactory())->create(
+            $this->defaultOutputDirectory,
             implode(',', $this->getConfigPaths())
         );
 
-        $this->addOption(
-            'overwrite',
-            'o',
-            InputOption::VALUE_NONE,
-            'Overwrite output directory if it already exists.'
-        );
-
-        $this->addOption(
-            'authority',
-            'a',
-            InputOption::VALUE_NONE,
-            'Don\'t create certificate authority (CA) and use this one instead.'
-        );
-
-        $this->addOption(
-            'skip',
-            's',
-            InputOption::VALUE_NONE,
-            'Don\'t confirm with question if default value is set.'
-        );
+        foreach ($this->options as $option) {
+            $this->addInputOption($option);
+        }
     }
 
-    public function createDistinguishedNames(Config $config, bool $skip, InputInterface $input, OutputInterface $output): DistinguishedNames
+    protected function execute(InputInterface $input, OutputInterface $output): int
     {
+        $logger = $this->createLogger($output->getVerbosity());
+
+        try {
+            $configLoader = new ConfigLoader($this->questionFactory, $this->options);
+            $config = $configLoader->load($input->getOption('config'), $input, $this->getDefinition());
+        } catch (Exception $exception) {
+            $logger->error($exception->getMessage());
+            return self::FAILURE;
+        }
+
+        $directory = $config->getOutputDirectory();
+        $overwrite = $config->isOverwriteEnabled();
+
+        if (file_exists($directory)) {
+            if (!is_dir($directory)) {
+                $logger->error(sprintf('Path [%s] is not a directory.', $directory));
+                return self::RETURN_INVALID_OUTPUT;
+            }
+
+            if (!$overwrite) {
+                $logger->warning(sprintf('Directory [%s] already exists. Use -o option to force overwrite.', $directory));
+                return self::SUCCESS;
+            }
+
+            $logger->info(sprintf('Directory [%s] already exists. Will overwrite files.', $directory));
+        }
+
+        $names = $this->createDistinguishedNames($config, $input, $output);
+
+        try {
+            $service = new SSLGeneratorService($config);
+            $ssl = $service->generate($names);
+        } catch (Exception $exception) {
+            $logger->error($exception->getMessage());
+            return self::FAILURE;
+        }
+
+        $exporter = new SSLExporterService($config, $logger);
+        $exporter->toFiles($ssl, $directory);
+
+        return self::SUCCESS;
+    }
+
+    public function createDistinguishedNames(Config $config, InputInterface $input, OutputInterface $output): DistinguishedNames
+    {
+        $skip = $config->isSkipEnabled();
         $helper = $this->getHelper('question');
 
         $names = [];
@@ -86,40 +114,6 @@ class SSLGenerateCommand extends Command
         return new DistinguishedNames(...$names);
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
-    {
-        $directory = $input->getOption('directory');
-        $overwrite = $input->getOption('overwrite');
-
-        if (file_exists($directory)) {
-            if (!is_dir($directory)) {
-                $output->writeln(sprintf('<error>Path [%s] is not a directory.</error>', $directory));
-                return self::RETURN_INVALID_OUTPUT;
-            }
-
-            if (!$overwrite) {
-                $output->writeln(sprintf('<info>Directory [%s] already exists. Use -o option to force overwrite.</info>', $directory));
-                return self::SUCCESS;
-            }
-
-            $output->writeln(sprintf('<info>Directory [%s] already exists. Overwriting...</info>', $directory));
-        }
-
-        $config = $this->loadConfig($input->getOption('config'), $input);
-
-        $skip = $input->getOption('skip');
-
-        $names = $this->createDistinguishedNames($config, $skip, $input, $output);
-
-        $service = new SSLGeneratorService();
-        $ssl = $service->generate($names);
-
-        $exporter = new SSLExporterService();
-        $exporter->toFiles($ssl, $directory);
-
-        return self::SUCCESS;
-    }
-
     private function getConfigPaths(): array
     {
         return [
@@ -129,52 +123,22 @@ class SSLGenerateCommand extends Command
         ];
     }
 
-    private function loadConfig(string $configsString, InputInterface $input): Config
+    private function createLogger(int $level): LoggerInterface
     {
-        $configs = [];
-        foreach (explode(',', $configsString) as $path)
-        {
-            if (!file_exists($path)) {
-                continue;
-            }
+        $levels = [
+            32 => Level::Notice,
+            64 => Level::Info,
+            128 => Level::Debug,
+        ];
+        $logger = new Logger('logger');
+        $logger->pushHandler(new StreamHandler('php://stdout', $levels[$level]));
 
-            $configs[] = Yaml::parse(
-                file_get_contents($path)
-            );
-        }
-
-        $configs[] = $this->loadConfigFromOptions($input);
-
-        $processor = new Processor();
-        $definition = new ConfigurationDefinition();
-        $processedConfiguration = $processor->processConfiguration(
-            $definition,
-            $configs
-        );
-
-        return new Config($processedConfiguration);
+        return $logger;
     }
 
-    private function loadConfigFromOptions(InputInterface $input): array
+    private function addInputOption(InputOption $inputOption): void
     {
-        $config = [
-            Config::KEY_DEFAULTS => []
-        ];
-
-        foreach ($this->questionFactory->getMap() as $name => $question) {
-            $option = call_user_func([$question, 'getCommandOption']);
-            assert($option instanceof InputOption);
-            $optionName = $option->getName();
-
-            $value = $input->getOption($optionName);
-
-            if (is_null($value)) {
-                continue;
-            }
-
-            $config[Config::KEY_DEFAULTS][$name] = $value;
-        }
-
-        return $config;
+        assert(!$this->getDefinition()->hasOption($inputOption->getName()));
+        $this->getDefinition()->addOption($inputOption);
     }
 }

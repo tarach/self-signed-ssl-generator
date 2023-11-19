@@ -4,21 +4,25 @@ declare(strict_types=1);
 
 namespace Tarach\SelfSignedCert;
 
-class SSLGeneratorService
+use Tarach\SelfSignedCert\Command\Config\Config;
+
+readonly class SSLGeneratorService
 {
+    public function __construct(
+        private Config $config
+    ) {
+    }
+
     public function generate(DistinguishedNames $names): SSLGeneratorOutput
     {
-        // private and public key pair
-        $privateKey = openssl_pkey_new([
-            "private_key_bits" => 2048,
-            "private_key_type" => OPENSSL_KEYTYPE_RSA,
-        ]);
+        $privateKey = openssl_pkey_new($this->config->getPrivateKeyFile()->getOptions());
 
         // Certificate signing request
         $csr = openssl_csr_new($names->getArray(), $privateKey, ['digest_alg' => 'sha256']);
 
-        // Self-signed certificate, valid for 365 days
-        $certificate = openssl_csr_sign($csr, null, $privateKey, $days=365, ['digest_alg' => 'sha256']);
+        $authority = $this->config->getAuthority();
+        $key = $authority->getPrivateKey() ?: $privateKey;
+        $certificate = openssl_csr_sign($csr, $authority->getCertificate(), $key, $days=365, ['digest_alg' => 'sha256']);
 
         return new SSLGeneratorOutput(
             $privateKey,

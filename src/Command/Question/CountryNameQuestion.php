@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tarach\SelfSignedCert\Command\Question;
 
-use Symfony\Component\Console\Input\InputOption;
-
 class CountryNameQuestion extends AbstractQuestion
 {
     public static function getQuestionString(): string
@@ -13,14 +11,9 @@ class CountryNameQuestion extends AbstractQuestion
         return 'Country Name (2 letter code - ISO 3166-1 alfa-2)';
     }
 
-    public static function getCommandOption(): InputOption
+    public static function getCommandOptionName(): string
     {
-        return new InputOption(
-            'un',
-            null,
-            InputOption::VALUE_REQUIRED,
-            self::getQuestionString(),
-        );
+        return 'un';
     }
 
     public static function getName(): string

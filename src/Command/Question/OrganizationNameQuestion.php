@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tarach\SelfSignedCert\Command\Question;
 
-use Symfony\Component\Console\Input\InputOption;
-
 class OrganizationNameQuestion extends AbstractQuestion
 {
     public static function getQuestionString(): string
@@ -13,14 +11,9 @@ class OrganizationNameQuestion extends AbstractQuestion
         return 'Organization Name (e.g., company)';
     }
 
-    public static function getCommandOption(): InputOption
+    public static function getCommandOptionName(): string
     {
-        return new InputOption(
-            'on',
-            null,
-            InputOption::VALUE_REQUIRED,
-            self::getQuestionString(),
-        );
+        return 'on';
     }
 
     public static function getName(): string

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tarach\SelfSignedCert\Command\Question;
 
-use Symfony\Component\Console\Input\InputOption;
-
 class LocalityNameQuestion extends AbstractQuestion
 {
     public static function getQuestionString(): string
@@ -13,14 +11,9 @@ class LocalityNameQuestion extends AbstractQuestion
         return 'Locality name (e.g., city)';
     }
 
-    public static function getCommandOption(): InputOption
+    public static function getCommandOptionName(): string
     {
-        return new InputOption(
-            'ln',
-            null,
-            InputOption::VALUE_REQUIRED,
-            self::getQuestionString(),
-        );
+        return 'ln';
     }
 
     public static function getName(): string

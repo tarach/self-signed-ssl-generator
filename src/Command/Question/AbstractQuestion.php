@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tarach\SelfSignedCert\Command\Question;
 
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Question\Question;
 
 abstract class AbstractQuestion extends Question implements CommandQuestionInterface
@@ -24,6 +25,16 @@ abstract class AbstractQuestion extends Question implements CommandQuestionInter
         return !is_null($default) && $default !== '';
     }
 
+    public static function getCommandOption(): InputOption
+    {
+        return new InputOption(
+            static::getCommandOptionName(),
+            null,
+            InputOption::VALUE_REQUIRED,
+            static::getQuestionString(),
+        );
+    }
+
     private function format(string $question): string
     {
         return $question . $this->getDefaultString() . PHP_EOL . ': ';
@@ -42,4 +53,6 @@ abstract class AbstractQuestion extends Question implements CommandQuestionInter
     abstract public static function getName(): string;
 
     abstract public static function getQuestionString(): string;
+
+    abstract public static function getCommandOptionName(): string;
 }

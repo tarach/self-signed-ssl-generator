@@ -11,7 +11,7 @@ use Tarach\SelfSignedCert\Command\Question\LocalityNameQuestion;
 use Tarach\SelfSignedCert\Command\Question\OrganizationalUnitNameQuestion;
 use Tarach\SelfSignedCert\Command\Question\OrganizationNameQuestion;
 use Tarach\SelfSignedCert\Command\Question\StateOrProvinceNameQuestion;
-use Tarach\SelfSignedCert\Config;
+use Tarach\SelfSignedCert\Command\Config\Config;
 
 class QuestionCollectionFactory
 {

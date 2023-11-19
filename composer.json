@@ -20,10 +20,10 @@
         "ext-openssl": "*",
         "symfony/console": "^6.3",
         "symfony/config": "^6.3",
-        "symfony/yaml": "^6.3"
+        "symfony/yaml": "^6.3",
+        "monolog/monolog": "^3.5"
     },
     "require-dev": {
-        "symfony/debug": "^4.4",
         "symfony/error-handler": "^6.3"
     }
 }
