@@ -1,19 +1,58 @@
-directory: ./ssl-cert
-overwrite:
-skip: true
-files:
-  csr:
-  cert: ca.pem
-  pkey:
-    name: privkey.pem
-    options:
-      private_key_bits: 2048
-      private_key_type: !php/const OPENSSL_KEYTYPE_RSA
-defaults:
-  countryName: PL
-  commonName: 192.168.56.10
-  emailAddress: sebastian.tarach@gmail.com
-  localityName: Warsaw
-  organizationalUnitName: IT Dept.
-  organizationName: My Company Ltd.
-  stateOrProvinceName: Mazovia
+caSchema:
+  directory: ssl-cert
+  overwrite:
+  skip: true
+  files:
+    csr:
+    cert: ca.pem
+    pkey:
+      name: privkey.pem
+      options:
+        private_key_bits: 2048
+        private_key_type: !php/const OPENSSL_KEYTYPE_RSA
+  defaults:
+    countryName: PL
+    commonName: certificate-authority-server
+    emailAddress: address@email.com
+    localityName: Warsaw
+    organizationalUnitName: IT Dept.
+    organizationName: My Company Ltd.
+    stateOrProvinceName: Mazovia
+serverSchema:
+  directory: ./ssl-cert
+  authority:
+    cert: ./ssl-cert/ca.pem
+    pkey: ./ssl-cert/privkey.pem
+  overwrite:
+  skip: true
+  files:
+    csr: server.req
+    cert: server.pem
+    pkey: server.key
+  defaults:
+    countryName: PL
+    commonName: 192.168.56.10
+    emailAddress: address@email.com
+    localityName: Warsaw
+    organizationalUnitName: IT Dept.
+    organizationName: My Company Ltd.
+    stateOrProvinceName: Mazovia
+clientSchema:
+  directory: ./ssl-cert
+  authority:
+    cert: ./ssl-cert/ca.pem
+    pkey: ./ssl-cert/privkey.pem
+  overwrite:
+  skip: true
+  files:
+    csr: client.req
+    cert: client.pem
+    pkey: client.key
+  defaults:
+    countryName: PL
+    commonName: docker-client
+    emailAddress: address@email.com
+    localityName: Warsaw
+    organizationalUnitName: IT Dept.
+    organizationName: My Company Ltd.
+    stateOrProvinceName: Mazovia

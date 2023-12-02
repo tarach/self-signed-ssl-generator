@@ -40,7 +40,7 @@ class SSLExporterService
 
     private function normalizeDirectoryPath(string $directory): string
     {
-        $directory = rtrim($directory, '\\/') . DIRECTORY_SEPARATOR;
+        $directory = realpath(rtrim($directory, '\\/')) . DIRECTORY_SEPARATOR;
 
         if (!file_exists($directory)) {
             if (!@mkdir($directory)) {

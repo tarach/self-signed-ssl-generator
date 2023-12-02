@@ -12,7 +12,7 @@ use Symfony\Component\Yaml\Yaml;
 use Tarach\SelfSignedCert\Command\OptionsCollection;
 use Tarach\SelfSignedCert\Command\QuestionCollectionFactory;
 
-readonly class ConfigLoader
+readonly class ConfigSchemaLoader
 {
     public function __construct(
         private QuestionCollectionFactory $questionFactory,
@@ -20,7 +20,7 @@ readonly class ConfigLoader
     ){
     }
 
-    public function load(string $configsString, InputInterface $input, InputDefinition $inputDefinition): Config
+    public function load(string $configsString, InputInterface $input, InputDefinition $inputDefinition): ConfigSchema
     {
         $configs = [];
 
@@ -37,27 +37,29 @@ readonly class ConfigLoader
             );
         }
 
-        // Load default value as first element
-        array_unshift($configs, $this->loadDefaultValues($input));
+        $configFromFiles = $this->processConfig($configs);
+        $schemas = $configFromFiles->getAllSchemas();
 
         // Load configuration from options
-        $configs[] = $this->loadConfigFromOptions($input, $inputDefinition);
-
-        $processor = new Processor();
-        $definition = new ConfigurationDefinition();
-        $processedConfiguration = $processor->processConfiguration(
-            $definition,
-            $configs
+        $configs[] = $this->applyToSchemas(
+            $schemas,
+            $this->loadConfigFromOptions($input, $inputDefinition)
         );
 
-        return new Config($processedConfiguration);
+        // Load default configuration
+        array_unshift($configs, $this->applyToSchemas(
+            $schemas,
+            $this->loadDefaultValues($input))
+        );
+
+        return $this->processConfig($configs);
     }
 
     private function loadConfigFromOptions(InputInterface $input, InputDefinition $inputDefinition): array
     {
         $config = [];
 
-        foreach ($this->getUsedOptions($input) as $optionName => $value)
+        foreach ($this->getUsedOptions($input) as $optionName)
         {
             $option = $inputDefinition->getOption($optionName);
             if (!($option instanceof ConfigOverrideInterface)) {
@@ -104,7 +106,11 @@ readonly class ConfigLoader
 
     private function getUsedOptions(InputInterface $input): array
     {
-        return (new \ReflectionObject($input))->getProperty('options')->getValue($input);
+        return array_keys(
+            (new \ReflectionObject($input))
+                ->getProperty('options')
+                ->getValue($input)
+        );
     }
 
     private function &getElementInArrayToSet(array &$config, array $path)
@@ -119,5 +125,32 @@ readonly class ConfigLoader
         }
 
         return $this->getElementInArrayToSet($config[$key], $path);
+    }
+
+    private function processConfig(array $configs): ConfigSchema
+    {
+        $processor = new Processor();
+        $definition = new ConfigurationDefinition();
+        $processedConfiguration = $processor->processConfiguration(
+            $definition,
+            $configs
+        );
+
+        return new ConfigSchema($processedConfiguration);
+    }
+
+    private function applyToSchemas(array $schemas, array $configOptions): array
+    {
+        if (empty($configOptions)) {
+            return [];
+        }
+
+        $config = [];
+        foreach ($schemas as $schema)
+        {
+            $config[$schema] = $configOptions;
+        }
+
+        return $config;
     }
 }

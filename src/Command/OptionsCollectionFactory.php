@@ -9,6 +9,7 @@ use Tarach\SelfSignedCert\Command\Option\AuthorityPrivateKeyOption;
 use Tarach\SelfSignedCert\Command\Option\ConfigOption;
 use Tarach\SelfSignedCert\Command\Option\DirectoryOption;
 use Tarach\SelfSignedCert\Command\Option\OverwriteOption;
+use Tarach\SelfSignedCert\Command\Option\SchemaOption;
 use Tarach\SelfSignedCert\Command\Option\SkipOption;
 
 class OptionsCollectionFactory
@@ -22,6 +23,7 @@ class OptionsCollectionFactory
             AuthorityCertificateOption::class,
             OverwriteOption::class,
             SkipOption::class,
+            SchemaOption::class,
         ];
     }
 

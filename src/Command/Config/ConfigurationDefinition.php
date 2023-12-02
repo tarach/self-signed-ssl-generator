@@ -12,8 +12,10 @@ class ConfigurationDefinition implements ConfigurationInterface
     public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('sslgen');
+        $node        = $treeBuilder->getRootNode();
 
-        $treeBuilder->getRootNode()
+        $node
+            ->arrayPrototype()
             ->children()
                 ->arrayNode(Config::KEY_AUTHORITY)
                     ->children()

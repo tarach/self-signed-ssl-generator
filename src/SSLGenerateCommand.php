@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tarach\SelfSignedCert;
 
 use Exception;
+use InvalidArgumentException;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
@@ -13,8 +14,11 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Question\Question;
 use Tarach\SelfSignedCert\Command\Config\Config;
-use Tarach\SelfSignedCert\Command\Config\ConfigLoader;
+use Tarach\SelfSignedCert\Command\Config\ConfigSchemaLoader;
+use Tarach\SelfSignedCert\Command\Option\ConfigOption;
+use Tarach\SelfSignedCert\Command\Option\SchemaOption;
 use Tarach\SelfSignedCert\Command\OptionsCollection;
 use Tarach\SelfSignedCert\Command\OptionsCollectionFactory;
 use Tarach\SelfSignedCert\Command\QuestionCollectionFactory;
@@ -58,12 +62,23 @@ class SSLGenerateCommand extends Command
         $logger = $this->createLogger($output->getVerbosity());
 
         try {
-            $configLoader = new ConfigLoader($this->questionFactory, $this->options);
-            $config = $configLoader->load($input->getOption('config'), $input, $this->getDefinition());
+            $configSchemaLoader = new ConfigSchemaLoader($this->questionFactory, $this->options);
+            $configSchema = $configSchemaLoader->load($input->getOption(ConfigOption::NAME), $input, $this->getDefinition());
         } catch (Exception $exception) {
             $logger->error($exception->getMessage());
             return self::FAILURE;
         }
+
+        $schemas = $configSchema->getAllSchemas();
+        $schema = $this->selectSchema($schemas, $input, $output);
+        if (!$schema) {
+            $logger->error('Wrong schema selected.');
+            return self::FAILURE;
+        }
+
+        $logger->info(sprintf('Using schema [%s].', $schema));
+
+        $config = $configSchema->getConfig($schema);
 
         $directory = $config->getOutputDirectory();
         $overwrite = $config->isOverwriteEnabled();
@@ -140,5 +155,65 @@ class SSLGenerateCommand extends Command
     {
         assert(!$this->getDefinition()->hasOption($inputOption->getName()));
         $this->getDefinition()->addOption($inputOption);
+    }
+
+    private function selectSchema(array $schemas, InputInterface $input, OutputInterface $output): ?string
+    {
+        if (empty($schemas)) {
+            throw new InvalidArgumentException('There must be at least one schema.');
+        }
+
+        if (1 === count($schemas)) {
+            return array_pop($schemas);
+        }
+
+        $schema = $input->getOption(SchemaOption::NAME);
+        if (!empty($schema)) {
+            $schema = $this->getSelectedSchema($schemas, $schema);
+            if (!$schema) {
+                return null;
+            }
+            return $schema;
+        }
+
+        return $this->userSelectSchema($schemas, $input, $output);
+    }
+
+    private function userSelectSchema(array $schemas, InputInterface $input, OutputInterface $output): string
+    {
+        $helper = $this->getHelper('question');
+
+        $question = '';
+        foreach ($schemas as $index => $schema)
+        {
+            $index += 1;
+            $question .= sprintf("[%s] %s\n", $index, $schema);
+        }
+
+        $question .= 'Choose schema: ';
+
+        $schema = null;
+        do {
+            $index = $helper->ask($input, $output, new Question($question));
+            $index -= 1;
+            if (array_key_exists($index, $schemas)) {
+                $schema = $schemas[$index];
+            }
+        } while (!$schema);
+
+        return $schema;
+    }
+
+    private function getSelectedSchema(array $schemas, mixed $schema): ?string
+    {
+        if (in_array($schema, $schemas)) {
+            return $schema;
+        }
+
+        if (array_key_exists($schema - 1, $schemas)) {
+            return $schemas[$schema - 1];
+        }
+
+        return null;
     }
 }

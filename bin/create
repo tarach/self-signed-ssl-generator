@@ -7,5 +7,5 @@ $phar->buildFromDirectory(
     '/vendor|src|bin\\/console.*/',
 );
 $phar->setDefaultStub('bin/console.php');
-$phar->compress(Phar::GZ);
-$phar->compress(Phar::BZ2);
+//$phar->compress(Phar::GZ);
+//$phar->compress(Phar::BZ2);
