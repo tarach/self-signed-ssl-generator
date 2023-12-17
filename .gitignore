@@ -1,3 +1,4 @@
 vendor/
 .idea/
 ssl-cert/
+sslgen.phar

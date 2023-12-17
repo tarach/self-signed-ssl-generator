@@ -10,10 +10,16 @@ use RuntimeException;
 
 readonly class Authority
 {
+    public ?string $cert;
+    public ?string $pkey;
+
     public function __construct(
-        public ?string $cert,
-        public ?string $pkey
+        ?string $cert,
+        ?string $pkey
     ){
+        $this->cert = $cert ? realpath($cert) : null;
+        $this->pkey = $pkey ? realpath($pkey) : null;
+
         $files = [
             'cert' => $this->cert,
             'pkey' => $this->pkey,

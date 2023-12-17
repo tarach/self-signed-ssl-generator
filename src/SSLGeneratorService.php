@@ -17,12 +17,17 @@ readonly class SSLGeneratorService
     {
         $privateKey = openssl_pkey_new($this->config->getPrivateKeyFile()->getOptions());
 
+        $days = 365;
+        $options = [
+            'digest_alg' => 'sha256',
+        ];
+
         // Certificate signing request
-        $csr = openssl_csr_new($names->getArray(), $privateKey, ['digest_alg' => 'sha256']);
+        $csr = openssl_csr_new($names->getArray(), $privateKey, $options);
 
         $authority = $this->config->getAuthority();
         $key = $authority->getPrivateKey() ?: $privateKey;
-        $certificate = openssl_csr_sign($csr, $authority->getCertificate(), $key, $days=365, ['digest_alg' => 'sha256']);
+        $certificate = openssl_csr_sign($csr, $authority->getCertificate(), $key, $days, $options);
 
         return new SSLGeneratorOutput(
             $privateKey,
