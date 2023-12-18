@@ -1,7 +1,9 @@
 #!/usr/bin/env php
 <?php
 
-$phar = new Phar('sslgen.phar');
+$fileName = 'sslgen.phar';
+
+$phar = new Phar($fileName);
 $phar->buildFromDirectory(
     __DIR__ . '/../',
     '/vendor|src|bin\\/console.*/',
@@ -9,3 +11,5 @@ $phar->buildFromDirectory(
 $phar->setDefaultStub('bin/console.php');
 //$phar->compress(Phar::GZ);
 //$phar->compress(Phar::BZ2);
+
+echo "Filesize: " . filesize(__DIR__ . '/../' . $fileName);
