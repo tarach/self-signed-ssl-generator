@@ -20,6 +20,9 @@ jobs:
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
 
+      - name: Adjust phar extension settings
+        run: echo "phar.readonly = Off" >> /etc/php/8.3/cli/conf.d/20-phar.ini
+
       - name: Generate runtime
         run: |
           chmod +x ./bin/create
