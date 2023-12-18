@@ -16,12 +16,10 @@ jobs:
         with:
           php-version: '8.3'
           extensions: mbstring, xml, ctype, iconv, intl
+          ini-values: phar.readonly=Off
 
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
-
-      - name: Adjust phar extension settings
-        run: sudo echo "phar.readonly = Off" >> /etc/php/8.3/cli/conf.d/20-phar.ini
 
       - name: Generate runtime
         run: |
