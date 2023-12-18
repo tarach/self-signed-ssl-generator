@@ -8,12 +8,18 @@ jobs:
   dump_contexts_to_log:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Setup PHP with logs
         uses: shivammathur/setup-php@verbose
         with:
           php-version: '8.3'
+          extensions: mbstring, xml, ctype, iconv, intl
+
       - name: Install Composer dependencies
         run: composer install --no-progress --prefer-dist --optimize-autoloader
+
       - name: Generate runtime
         run: |
           chmod +x ./bin/create
