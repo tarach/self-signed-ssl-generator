@@ -48,3 +48,7 @@ jobs:
 
       - name: Dump php.ini file paths
         run: php --ini
+
+      - name: Cat /etc/php/8.3/cli/conf.d/20-phar.ini
+        run: cat /etc/php/8.3/cli/conf.d/20-phar.ini
+
