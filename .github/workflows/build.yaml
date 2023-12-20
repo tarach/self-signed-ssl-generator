@@ -26,3 +26,21 @@ jobs:
           chmod +x ./bin/create
           ./bin/create
         shell: bash
+
+      # Get the release ID using GitHub REST API
+      - name: Get Release ID
+        id: get_release
+        run: |
+          release_id=$(curl -s -X GET -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" | jq -r '.id')
+          echo "::set-output name=release_id::$release_id"
+          
+      # Upload the generated file as an asset to the existing release
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.get_release.outputs.release_id }}/assets?name=sslgen.phar
+          asset_path: ./sslgen.phar
+          asset_name: sslgen.phar
+          asset_content_type: text/plain
