@@ -32,8 +32,11 @@ jobs:
         id: get_release
         run: |
           release_id=$(curl -s -X GET -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" | jq -r '.id')
-          echo "::set-output name=release_id::$release_id"
-          
+          echo "release_id=$release_id" >> $GITHUB_OUTPUT
+
+      - name: Test GITHUB_OUTPUT
+        run: echo "${GITHUB_OUTPUT}"
+
       # Upload the generated file as an asset to the existing release
       - name: Upload Release Asset
         uses: actions/upload-release-asset@v1
