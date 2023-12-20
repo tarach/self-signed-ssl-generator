@@ -5,7 +5,8 @@ on:
       - 'v*'
 
 jobs:
-  dump_contexts_to_log:
+  build_release:
+    permissions: write-all
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -35,7 +36,7 @@ jobs:
           echo "release_id=$release_id" >> $GITHUB_OUTPUT
 
       - name: Test GITHUB_OUTPUT
-        run: echo "${GITHUB_OUTPUT}"
+        run: cat "${GITHUB_OUTPUT}"
 
       # Upload the generated file as an asset to the existing release
       - name: Upload Release Asset
