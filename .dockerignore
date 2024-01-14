@@ -1,0 +1,5 @@
+vendor/
+src/
+.git/
+.github/
+bin/

@@ -12,4 +12,7 @@ $phar->setDefaultStub('bin/console.php');
 //$phar->compress(Phar::GZ);
 //$phar->compress(Phar::BZ2);
 
-echo "Filesize: " . filesize(__DIR__ . '/../' . $fileName);
+$filePath = __DIR__ . '/../' . $fileName;
+
+echo "Filesize: " . filesize($filePath) . PHP_EOL;
+echo "SHA1: " . sha1_file($filePath) . PHP_EOL;

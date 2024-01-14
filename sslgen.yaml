@@ -19,7 +19,7 @@ caSchema:
     organizationName: My Company Ltd.
     stateOrProvinceName: Mazovia
 serverSchema:
-  directory: ./ssl-cert
+  directory: ssl-cert
   authority:
     cert: ./ssl-cert/ca.pem
     pkey: ./ssl-cert/privkey.pem
@@ -38,7 +38,7 @@ serverSchema:
     organizationName: My Company Ltd.
     stateOrProvinceName: Mazovia
 clientSchema:
-  directory: ./ssl-cert
+  directory: ssl-cert
   authority:
     cert: ./ssl-cert/ca.pem
     pkey: ./ssl-cert/privkey.pem

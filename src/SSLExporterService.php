@@ -17,7 +17,7 @@ class SSLExporterService
 
     public function toFiles(SSLGeneratorOutput $ssl, string $directory): void
     {
-        $directory = $this->normalizeDirectoryPath($directory);
+        $this->logger->info(sprintf('Output directory set to [%s].', $directory));
 
         $csr = $this->config->getSigningRequestFile();
         if ($csr->hasName()) {
@@ -36,22 +36,5 @@ class SSLExporterService
             $this->logger->info(sprintf('Saving private key as file [%s].', $pkey->getName()));
             openssl_pkey_export_to_file($ssl->privateKey, $directory . $pkey->getName());
         }
-    }
-
-    private function normalizeDirectoryPath(string $directory): string
-    {
-        $directory = rtrim($directory, '\\/') . DIRECTORY_SEPARATOR;
-
-        if ('.' === $directory[0]) {
-            $directory = getcwd() . DIRECTORY_SEPARATOR . $directory;
-        }
-
-        if (!file_exists($directory)) {
-            if (!@mkdir($directory)) {
-                throw new \RuntimeException(sprintf('Unable to create output directory [%s].', $directory));
-            }
-        }
-
-        return $directory;
     }
 }

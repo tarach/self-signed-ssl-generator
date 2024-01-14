@@ -60,6 +60,11 @@ class SSLGenerateCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $logger = $this->createLogger($output->getVerbosity());
+        if (!$logger) {
+            $logger = $this->createLogger(128);
+            $logger->error('Incorrect verbosity level ? To many -vv ?');
+            return self::FAILURE;
+        }
 
         try {
             $configSchemaLoader = new ConfigSchemaLoader($this->questionFactory, $this->options);
@@ -82,6 +87,8 @@ class SSLGenerateCommand extends Command
 
         $directory = $config->getOutputDirectory();
         $overwrite = $config->isOverwriteEnabled();
+
+        $directory = (new DirectoryPathNormalizer())->normalize($directory);
 
         if (file_exists($directory)) {
             if (!is_dir($directory)) {
@@ -138,13 +145,17 @@ class SSLGenerateCommand extends Command
         ];
     }
 
-    private function createLogger(int $level): LoggerInterface
+    private function createLogger(int $level): ?LoggerInterface
     {
         $levels = [
             32 => Level::Notice,
             64 => Level::Info,
             128 => Level::Debug,
         ];
+        if (!array_key_exists($level, $levels)) {
+            return null;
+        }
+
         $logger = new Logger('logger');
         $logger->pushHandler(new StreamHandler('php://stdout', $levels[$level]));
 
