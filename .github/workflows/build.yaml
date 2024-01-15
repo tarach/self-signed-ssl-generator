@@ -53,10 +53,13 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker image
-        run: docker build -t tarach/sslg:latest .
-
-      - name: Tag Docker image
-        run: docker tag tarach/sslg:latest tarach/sslg:${GITHUB_REF_NAME}
+        run: docker build -t tarach/sslg:${GITHUB_REF_NAME} .
 
       - name: Push Docker image
         run: docker push tarach/sslg:${GITHUB_REF_NAME}
+
+      - name: Tag latest Docker image
+        run: docker tag tarach/sslg:${GITHUB_REF_NAME} tarach/sslg:latest
+
+      - name: Push latest Docker image
+        run: docker push tarach/sslg:latest
