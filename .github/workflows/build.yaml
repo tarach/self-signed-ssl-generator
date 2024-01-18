@@ -34,6 +34,9 @@ jobs:
           release_id=$(curl -s -X GET -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" | jq -r '.id')
           echo "release_id=$release_id" >> $GITHUB_OUTPUT
 
+      - name: Setup Hub
+        uses: Geertvdc/setup-hub@v1.0.0
+
       # Upload the generated files as assets to the existing release
       - name: Upload Release Assets
         run: |
