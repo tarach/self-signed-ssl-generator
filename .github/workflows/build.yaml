@@ -36,6 +36,8 @@ jobs:
 
       - name: Setup Hub
         uses: Geertvdc/setup-hub@v1.0.0
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: 'true'
 
       # Upload the generated files as assets to the existing release
       - name: Upload Release Assets
