@@ -25,6 +25,7 @@ jobs:
         run: |
           chmod +x ./bin/create
           ./bin/create
+          ls -Al
         shell: bash
 
       # Get the release ID using GitHub REST API
