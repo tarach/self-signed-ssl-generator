@@ -15,8 +15,8 @@ $phar->setDefaultStub('bin/console.php');
 $filePath = __DIR__ . '/../' . $fileName;
 $sha1 = sha1_file($filePath);
 $sha256 = hash_file('sha256', $filePath);
-file_put_contents($filePath . '.' . '.sha1', $sha1);
-file_put_contents($filePath . '.' . '.sha256', $sha256);
+file_put_contents($filePath . '.sha1', $sha1);
+file_put_contents($filePath . '.sha256', $sha256);
 
 echo "Filesize: " . filesize($filePath) . PHP_EOL;
 echo "SHA1: " . $sha1 . PHP_EOL;
