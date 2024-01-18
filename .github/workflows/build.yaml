@@ -9,11 +9,8 @@ jobs:
     permissions: write-all
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install hub command
-        uses: geertvdc/setup-hub@master
+      - uses: actions/checkout@v4
+      - uses: geertvdc/setup-hub@master
 
       - name: Setup PHP with logs
         uses: shivammathur/setup-php@verbose
