@@ -42,7 +42,7 @@ jobs:
           assets=("sslgen.phar" "sslgen.phar.sha1" "sslgen.phar.sha256")
           tag_name="${GITHUB_REF##*/}"
           for asset in "${assets[@]}"; do
-            hub release edit --attach "${assets[@]}" -m "" "$tag_name"
+            hub release edit --attach "${asset}" -m "" "$tag_name"
           done
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
