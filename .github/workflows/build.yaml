@@ -37,6 +37,7 @@ jobs:
 
       # Upload the generated files as assets to the existing release
       - name: Upload Release Assets
+        uses: actions/checkout@v4
         run: |
           set -x
           assets=("sslgen.phar" "sslgen.phar.sha1" "sslgen.phar.sha256")
