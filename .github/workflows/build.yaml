@@ -35,16 +35,15 @@ jobs:
           release_id=$(curl -s -X GET -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" | jq -r '.id')
           echo "release_id=$release_id" >> $GITHUB_OUTPUT
 
-      # Upload the generated file as an asset to the existing release
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
+      # Upload the generated files as assets to the existing release
+      - name: Upload Release Assets
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: https://uploads.github.com/repos/${{ github.repository }}/releases/${{ steps.get_release.outputs.release_id }}/assets?name=sslgen.phar
-          asset_path: ./sslgen.phar
-          asset_name: sslgen.phar
-          asset_content_type: text/plain
+        run: |
+          set -x
+          assets=("sslgen.phar" "sslgen.phar.sha1" "sslgen.phar.sha256")
+          tag_name="${GITHUB_REF##*/}"
+          hub release create "${assets[@]}" -m "$tag_name" "$tag_name"
 
       - name: Login to Docker Hub
         uses: docker/login-action@v1
