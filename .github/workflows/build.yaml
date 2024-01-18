@@ -27,13 +27,6 @@ jobs:
           ./bin/create
         shell: bash
 
-      # Get the release ID using GitHub REST API
-      - name: Get Release ID
-        id: get_release
-        run: |
-          release_id=$(curl -s -X GET -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/tags/${GITHUB_REF_NAME}" | jq -r '.id')
-          echo "release_id=$release_id" >> $GITHUB_OUTPUT
-
       - name: Setup Hub
         uses: Geertvdc/setup-hub@v1.0.0
         env:
@@ -43,7 +36,7 @@ jobs:
       - name: Upload Release Assets
         run: |
           set -x
-          assets=("sslgen.phar" "sslgen.phar.sha1" "sslgen.phar.sha256")
+          assets=("sslgen.phar" "sslgen.phar.sha1" "sslgen.phar.sha256" "sslgen.phar.sha384")
           tag_name="${GITHUB_REF##*/}"
           for asset in "${assets[@]}"; do
             hub release edit --attach "${asset}" -m "" "$tag_name"
