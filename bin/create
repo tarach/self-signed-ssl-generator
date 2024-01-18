@@ -20,3 +20,4 @@ file_put_contents($filePath . '.' . '.sha256', $sha256);
 
 echo "Filesize: " . filesize($filePath) . PHP_EOL;
 echo "SHA1: " . $sha1 . PHP_EOL;
+echo "SHA256: " . $sha256 . PHP_EOL;
