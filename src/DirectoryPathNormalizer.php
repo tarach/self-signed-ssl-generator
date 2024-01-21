@@ -6,6 +6,8 @@ namespace Tarach\SelfSignedCert;
 
 class DirectoryPathNormalizer
 {
+    private bool $isCreated = false;
+
     public function normalize(string $directory): string
     {
         $directory = rtrim($directory, '\\/') . DIRECTORY_SEPARATOR;
@@ -15,11 +17,17 @@ class DirectoryPathNormalizer
         }
 
         if (!file_exists($directory)) {
+            $this->isCreated = true;
             if (!@mkdir($directory)) {
                 throw new \RuntimeException(sprintf('Unable to create output directory [%s].', $directory));
             }
         }
 
         return $directory;
+    }
+
+    public function isCreated(): bool
+    {
+        return $this->isCreated;
     }
 }

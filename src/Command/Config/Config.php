@@ -13,6 +13,8 @@ class Config
     const KEY_OVERWRITE = 'overwrite';
     const KEY_SKIP = 'skip';
     const KEY_FILES = 'files';
+    const KEY_FILES_NAME = 'name';
+    const KEY_FILES_OPTIONS = 'options';
     const KEY_DEFAULTS = 'defaults';
     const KEY_CSR_FILE_NAME = 'csr';
     const KEY_CERT_FILE_NAME = 'cert';
@@ -38,17 +40,29 @@ class Config
 
     public function getSigningRequestFile(): SigningRequestFile
     {
-        return new SigningRequestFile($this->config[self::KEY_FILES][self::KEY_CSR_FILE_NAME] ?? []);
+        return new SigningRequestFile($this->normalizeFileKey($this->config[self::KEY_FILES][self::KEY_CSR_FILE_NAME]));
     }
 
     public function getCertificateFile(): CertificateFile
     {
-        return new CertificateFile($this->config[self::KEY_FILES][self::KEY_CERT_FILE_NAME] ?? []);
+        return new CertificateFile($this->normalizeFileKey($this->config[self::KEY_FILES][self::KEY_CERT_FILE_NAME]));
     }
 
     public function getPrivateKeyFile(): PrivateKeyFile
     {
-        return new PrivateKeyFile($this->config[self::KEY_FILES][self::KEY_PKEY_FILE_NAME] ?? []);
+        return new PrivateKeyFile($this->normalizeFileKey($this->config[self::KEY_FILES][self::KEY_PKEY_FILE_NAME]));
+    }
+
+    private function normalizeFileKey(array|string $var): array
+    {
+        if (is_array($var)) {
+            return $var;
+        }
+
+        return [
+            self::KEY_FILES_NAME => $var,
+            self::KEY_FILES_OPTIONS => []
+        ];
     }
 
     public function getOutputDirectory(): string

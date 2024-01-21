@@ -15,8 +15,10 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\Question;
+use Tarach\SelfSignedCert\Command\Config\CommandLineOptionsConfigLoader;
 use Tarach\SelfSignedCert\Command\Config\Config;
 use Tarach\SelfSignedCert\Command\Config\ConfigSchemaLoader;
+use Tarach\SelfSignedCert\Command\Config\DefaultConfig;
 use Tarach\SelfSignedCert\Command\Option\ConfigOption;
 use Tarach\SelfSignedCert\Command\Option\SchemaOption;
 use Tarach\SelfSignedCert\Command\OptionsCollection;
@@ -67,30 +69,46 @@ class SSLGenerateCommand extends Command
         }
 
         try {
-            $configSchemaLoader = new ConfigSchemaLoader($this->questionFactory, $this->options);
-            $configSchema = $configSchemaLoader->load($input->getOption(ConfigOption::NAME), $input, $this->getDefinition());
+            $commandLineOptions = (new CommandLineOptionsConfigLoader($this->questionFactory))
+                ->load($input, $this->getDefinition())
+            ;
+
+            $configSchemaLoader = new ConfigSchemaLoader(
+                $this->questionFactory,
+                $this->options,
+                $commandLineOptions
+            );
+            $configSchema = $configSchemaLoader->load($input->getOption(ConfigOption::NAME), $input);
         } catch (Exception $exception) {
             $logger->error($exception->getMessage());
             return self::FAILURE;
         }
 
+        $schema = false;
         $schemas = $configSchema->getAllSchemas();
-        $schema = $this->selectSchema($schemas, $input, $output);
-        if (!$schema) {
-            $logger->error('Wrong schema selected.');
-            return self::FAILURE;
+
+        if (!empty($schemas)) {
+            $schema = $this->selectSchema($schemas, $input, $output);
+            if (!$schema) {
+                $logger->error('Wrong schema selected.');
+                return self::FAILURE;
+            }
+
+            $logger->info(sprintf('Using schema [%s].', $schema));
         }
 
-        $logger->info(sprintf('Using schema [%s].', $schema));
-
-        $config = $configSchema->getConfig($schema);
+        $config = $schema
+            ? $configSchema->getConfig($schema)
+            : new DefaultConfig($commandLineOptions)
+        ;
 
         $directory = $config->getOutputDirectory();
         $overwrite = $config->isOverwriteEnabled();
 
-        $directory = (new DirectoryPathNormalizer())->normalize($directory);
+        $normalizer = new DirectoryPathNormalizer();
+        $directory = $normalizer->normalize($directory);
 
-        if (file_exists($directory)) {
+        if (!$normalizer->isCreated()) {
             if (!is_dir($directory)) {
                 $logger->error(sprintf('Path [%s] is not a directory.', $directory));
                 return self::RETURN_INVALID_OUTPUT;

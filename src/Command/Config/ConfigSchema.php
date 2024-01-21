@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tarach\SelfSignedCert\Command\Config;
 
-class ConfigSchema
+readonly class ConfigSchema
 {
     public function __construct(
-        private readonly array $config
+        private array $config
     ) {
     }
 
