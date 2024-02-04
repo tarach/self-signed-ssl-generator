@@ -10,7 +10,7 @@ use Symfony\Component\Yaml\Yaml;
 use Tarach\SelfSignedCert\Command\OptionsCollection;
 use Tarach\SelfSignedCert\Command\QuestionCollectionFactory;
 
-class ConfigSchemaLoader
+readonly class ConfigSchemaLoader
 {
     use ArrayHelperTrait;
 

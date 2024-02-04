@@ -6,9 +6,10 @@ namespace Tarach\SelfSignedCert;
 
 use Exception;
 use InvalidArgumentException;
-use Monolog\Handler\StreamHandler;
+use Monolog\Handler\AbstractProcessingHandler;
 use Monolog\Level;
 use Monolog\Logger;
+use Monolog\LogRecord;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -24,6 +25,8 @@ use Tarach\SelfSignedCert\Command\Option\SchemaOption;
 use Tarach\SelfSignedCert\Command\OptionsCollection;
 use Tarach\SelfSignedCert\Command\OptionsCollectionFactory;
 use Tarach\SelfSignedCert\Command\QuestionCollectionFactory;
+use Tarach\SelfSignedCert\Exception\EmptyDistinguishedNameException;
+use Tarach\SelfSignedCert\Exception\MissingSchemaException;
 
 /**
  * @method getName(): string
@@ -61,9 +64,9 @@ class SSLGenerateCommand extends Command
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
-        $logger = $this->createLogger($output->getVerbosity());
+        $logger = $this->createLogger($output->getVerbosity(), $output);
         if (!$logger) {
-            $logger = $this->createLogger(128);
+            $logger = $this->createLogger(128, $output);
             $logger->error('Incorrect verbosity level ? To many -vv ?');
             return self::FAILURE;
         }
@@ -88,7 +91,13 @@ class SSLGenerateCommand extends Command
         $schemas = $configSchema->getAllSchemas();
 
         if (!empty($schemas)) {
-            $schema = $this->selectSchema($schemas, $input, $output);
+            try {
+                $schema = $this->selectSchema($schemas, $input, $output);
+            } catch (MissingSchemaException $exception) {
+                $logger->error($exception->getMessage());
+                return self::FAILURE;
+            }
+
             if (!$schema) {
                 $logger->error('Wrong schema selected.');
                 return self::FAILURE;
@@ -97,24 +106,28 @@ class SSLGenerateCommand extends Command
             $logger->info(sprintf('Using schema [%s].', $schema));
         }
 
+        if (!$schema && !is_null($input->getOption(SchemaOption::NAME))) {
+            $logger->error('Trying to select non existing schema.');
+            return self::FAILURE;
+        }
+
         $config = $schema
             ? $configSchema->getConfig($schema)
             : new DefaultConfig($commandLineOptions)
         ;
 
         $directory = $config->getOutputDirectory();
-        $overwrite = $config->isOverwriteEnabled();
 
-        $normalizer = new DirectoryPathNormalizer();
-        $directory = $normalizer->normalize($directory);
+        $normalizer = new DirectoryPathNormalizer($directory);
+        $directory = $normalizer->normalize();
 
-        if (!$normalizer->isCreated()) {
+        if (!$normalizer->hasCreatedDirectory() && !$normalizer->isStream()) {
             if (!is_dir($directory)) {
                 $logger->error(sprintf('Path [%s] is not a directory.', $directory));
                 return self::RETURN_INVALID_OUTPUT;
             }
 
-            if (!$overwrite) {
+            if (!$config->isOverwriteEnabled()) {
                 $logger->warning(sprintf('Directory [%s] already exists. Use -o option to force overwrite.', $directory));
                 return self::SUCCESS;
             }
@@ -122,7 +135,12 @@ class SSLGenerateCommand extends Command
             $logger->info(sprintf('Directory [%s] already exists. Will overwrite files.', $directory));
         }
 
-        $names = $this->createDistinguishedNames($config, $input, $output);
+        try {
+            $names = $this->createDistinguishedNames($config, $input, $output);
+        } catch (EmptyDistinguishedNameException $exception) {
+            $logger->error($exception->getMessage());
+            return self::FAILURE;
+        }
 
         try {
             $service = new SSLGeneratorService($config);
@@ -149,7 +167,13 @@ class SSLGenerateCommand extends Command
                 $names[$question->getName()] = $question->getDefault();
                 continue;
             }
-            $names[$question->getName()] = $helper->ask($input, $output, $question);
+            $value = $helper->ask($input, $output, $question);
+
+            if (empty($value)) {
+                throw new EmptyDistinguishedNameException($question->getName());
+            }
+
+            $names[$question->getName()] = $value;
         }
         return new DistinguishedNames(...$names);
     }
@@ -163,7 +187,7 @@ class SSLGenerateCommand extends Command
         ];
     }
 
-    private function createLogger(int $level): ?LoggerInterface
+    private function createLogger(int $level, OutputInterface $output): ?LoggerInterface
     {
         $levels = [
             32 => Level::Notice,
@@ -174,8 +198,21 @@ class SSLGenerateCommand extends Command
             return null;
         }
 
+        $handler = new class($output) extends AbstractProcessingHandler {
+            private OutputInterface $output;
+            public function __construct(OutputInterface $output)
+            {
+                $this->output = $output;
+                parent::__construct();
+            }
+            protected function write(LogRecord $record): void
+            {
+                $this->output->write((string) $record->formatted);
+            }
+        };
+
         $logger = new Logger('logger');
-        $logger->pushHandler(new StreamHandler('php://stdout', $levels[$level]));
+        $logger->pushHandler($handler);
 
         return $logger;
     }
@@ -186,6 +223,9 @@ class SSLGenerateCommand extends Command
         $this->getDefinition()->addOption($inputOption);
     }
 
+    /**
+     * @throws MissingSchemaException
+     */
     private function selectSchema(array $schemas, InputInterface $input, OutputInterface $output): ?string
     {
         if (empty($schemas)) {
@@ -233,10 +273,17 @@ class SSLGenerateCommand extends Command
         return $schema;
     }
 
+    /**
+     * @throws MissingSchemaException
+     */
     private function getSelectedSchema(array $schemas, mixed $schema): ?string
     {
         if (in_array($schema, $schemas)) {
             return $schema;
+        }
+
+        if (!is_numeric($schema)) {
+            throw new MissingSchemaException($schema);
         }
 
         if (array_key_exists($schema - 1, $schemas)) {

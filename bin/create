@@ -6,7 +6,7 @@ $fileName = 'sslgen.phar';
 $phar = new Phar($fileName);
 $phar->buildFromDirectory(
     __DIR__ . '/../',
-    '/vendor|src|bin\\/console.*/',
+    '/vendor|src|bin\\/console.*|bin\\/app.php/',
 );
 $phar->setDefaultStub('bin/console.php');
 //$phar->compress(Phar::GZ);

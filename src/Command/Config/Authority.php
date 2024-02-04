@@ -17,16 +17,12 @@ readonly class Authority
         ?string $cert,
         ?string $pkey
     ){
-        $this->cert = $cert ? realpath($cert) : null;
-        $this->pkey = $pkey ? realpath($pkey) : null;
-
         $files = [
-            'cert' => $this->cert,
-            'pkey' => $this->pkey,
+            'cert' => $cert,
+            'pkey' => $pkey,
         ];
 
-        foreach ($files as $type => $file)
-        {
+        foreach ($files as $type => $file) {
             if (!$file) {
                 continue;
             }
@@ -39,6 +35,9 @@ readonly class Authority
                 throw new RuntimeException(sprintf('Specified file  [%s] for [%s] is not readable.', $file, $type));
             }
         }
+
+        $this->cert = $cert ? realpath($cert) : null;
+        $this->pkey = $pkey ? realpath($pkey) : null;
     }
 
     public function getCertificate(): ?OpenSSLCertificate

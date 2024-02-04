@@ -22,19 +22,24 @@ class SSLExporterService
         $csr = $this->config->getSigningRequestFile();
         if ($csr->hasName()) {
             $this->logger->info(sprintf('Saving certificate signing request (CSR) as file [%s].', $csr->getName()));
-            openssl_csr_export_to_file($ssl->signingRequest, $directory . $csr->getName());
+            openssl_csr_export($ssl->signingRequest, $output);
+            file_put_contents($directory . $csr->getName(), $output);
         }
 
         $cert = $this->config->getCertificateFile();
         if ($cert->hasName()) {
             $this->logger->info(sprintf('Saving certificate as file [%s].', $cert->getName()));
-            openssl_x509_export_to_file($ssl->certificate, $directory . $cert->getName());
+            $output = '';
+            openssl_x509_export($ssl->certificate, $output);
+            file_put_contents($directory . $cert->getName(), $output);
         }
 
         $pkey = $this->config->getPrivateKeyFile();
         if ($pkey->hasName()) {
             $this->logger->info(sprintf('Saving private key as file [%s].', $pkey->getName()));
-            openssl_pkey_export_to_file($ssl->privateKey, $directory . $pkey->getName());
+            $output = '';
+            openssl_pkey_export($ssl->privateKey, $output);
+            file_put_contents($directory . $pkey->getName(), $output);
         }
     }
 }

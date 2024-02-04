@@ -1,14 +1,6 @@
 <?php
 
-require __DIR__ . '/../vendor/autoload.php';
+$application = require __DIR__ . '/app.php';
+/** @var $application \Symfony\Component\Console\Application */
 
-use Symfony\Component\Console\Application;
-use Tarach\SelfSignedCert\SSLGenerateCommand;
-
-$application = new Application('ssl:generate', '1.0.0');
-$command = new SSLGenerateCommand();
-
-$application->add($command);
-
-$application->setDefaultCommand($command->getName(), true);
 $application->run();

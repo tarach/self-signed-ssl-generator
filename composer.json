@@ -24,6 +24,7 @@
         "monolog/monolog": "^3.5"
     },
     "require-dev": {
-        "symfony/error-handler": "^6.3"
+        "symfony/error-handler": "^6.3",
+        "behat/behat": "^3.14"
     }
 }
