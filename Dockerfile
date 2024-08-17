@@ -14,4 +14,4 @@ USER php-usr
 
 WORKDIR /app
 
-ENTRYPOINT ["/usr/local/bin/sslgen.sh"]
+CMD ["/usr/local/bin/sslgen.sh"]

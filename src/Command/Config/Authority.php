@@ -22,6 +22,13 @@ readonly class Authority
             'pkey' => $pkey,
         ];
 
+        var_dump([
+            getcwd(),
+            get_include_path(),
+            realpath("./ssl-cert/ca.pem"),
+            file_exists("./ssl-cert/ca.pem"),
+        ]);
+
         foreach ($files as $type => $file) {
             if (!$file) {
                 continue;
