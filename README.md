@@ -15,7 +15,7 @@
 Use as ```sslgen --help```
 ```bash
 docker pull tarach/sslg
-echo 'alias sslgen="docker run -it --rm -v \$(pwd):/app tarach/sslg"' >> ~/.bashrc
+echo 'alias sslgen="docker run -it --rm -v \$(pwd):/app tarach/sslg sslgen.sh"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
