@@ -22,23 +22,18 @@ readonly class Authority
             'pkey' => $pkey,
         ];
 
-        var_dump([
-            getcwd(),
-            get_include_path(),
-            realpath("./ssl-cert/ca.pem"),
-            file_exists("./ssl-cert/ca.pem"),
-        ]);
-
         foreach ($files as $type => $file) {
             if (!$file) {
                 continue;
             }
 
-            if (!file_exists($file)) {
+            $filePath = realpath($file);
+
+            if (false === $filePath) {
                 throw new RuntimeException(sprintf('Specified path [%s] for [%s] is not a valid CA file.', $file, $type));
             }
 
-            if (!is_readable($file)) {
+            if (!is_readable($filePath)) {
                 throw new RuntimeException(sprintf('Specified file  [%s] for [%s] is not readable.', $file, $type));
             }
         }
